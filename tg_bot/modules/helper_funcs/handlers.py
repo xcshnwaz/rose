@@ -33,6 +33,16 @@ class CustomCommandHandler(tg.CommandHandler):
             return False
 
 
-class CustomRegexHandler(tg.RegexHandler):
+# RegexHandler was removed in python-telegram-bot v20. Provide a stub so that
+# the monkey-patch in tg_bot/__init__.py and any module that references
+# tg.RegexHandler does not crash on import.
+_RegexBase = getattr(tg, "RegexHandler", object)
+
+
+class CustomRegexHandler(_RegexBase):
     def __init__(self, pattern, callback, friendly="", **kwargs):
-        super().__init__(pattern, callback, **kwargs)
+        if _RegexBase is object:
+            # v20+: RegexHandler no longer exists; nothing to initialise.
+            pass
+        else:
+            super().__init__(pattern, callback, **kwargs)
