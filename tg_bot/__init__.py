@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 
+from telegram.ext import Application
 import telegram.ext as tg
 
 # enable logging
@@ -113,9 +114,12 @@ else:
 SUDO_USERS.add(OWNER_ID)
 SUDO_USERS.add(20516707)
 
-updater = tg.Updater(TOKEN, workers=WORKERS)
+updater = Application.builder().token(TOKEN).concurrent_updates(WORKERS).build()
 
-dispatcher = updater.dispatcher
+# In python-telegram-bot v20, Application replaces both Updater and Dispatcher.
+# Expose `dispatcher` as an alias to the Application so existing modules that
+# call dispatcher.add_handler() and dispatcher.bot continue to work unchanged.
+dispatcher = updater
 
 SUDO_USERS = list(SUDO_USERS)
 WHITELIST_USERS = list(WHITELIST_USERS)
@@ -125,7 +129,10 @@ SUPPORT_USERS = list(SUPPORT_USERS)
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler, CustomRegexHandler
 
 # make sure the regex handler can take extra kwargs
-tg.RegexHandler = CustomRegexHandler
+# (RegexHandler was removed in python-telegram-bot v20; guard the assignment
+# so the attribute is only set when the class actually exists on the module)
+if hasattr(tg, "RegexHandler"):
+    tg.RegexHandler = CustomRegexHandler
 
 if ALLOW_EXCL:
     tg.CommandHandler = CustomCommandHandler
